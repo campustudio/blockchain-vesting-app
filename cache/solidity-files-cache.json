@@ -531,8 +531,8 @@
       ]
     },
     "/Users/chrisdu/blockchain-vesting-app/contracts/TokenVestingOptimized.sol": {
-      "lastModificationDate": 1764615954375,
-      "contentHash": "a99c4028611dc77091eb654ee767324f",
+      "lastModificationDate": 1764617608557,
+      "contentHash": "87f63f76e3cd898e8e165ecf5696aad8",
       "sourceName": "contracts/TokenVestingOptimized.sol",
       "solcConfig": {
         "version": "0.8.20",

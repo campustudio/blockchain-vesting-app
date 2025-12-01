@@ -339,29 +339,42 @@ getVestingInfo(vestingId) // Get all data in single call
 
 ## 📝 Live Test Data on Sepolia
 
-The application is connected to real smart contracts deployed on Sepolia testnet:
+The application is connected to **optimized smart contracts** deployed on Sepolia testnet with diverse test data:
 
-**Smart Contracts:**
+**Smart Contracts (Optimized Version):**
 
-- **Vesting Contract:** `0x50DD7096fAB68990Ef61430FF8b6a25D0054A857`
-- **PROJ Token:** `0x334ea69ed935F5c46D777506c83262DBAD59931A`
+- **Vesting Contract:** `0x186FBa7B212C5aCCAe3f264178f28922080Bf5a5`
+- **PROJ Token:** `0x10FDc7A86a2EB3864b18e26B5a204134DD85Cb1c`
 
 **Test Account:** `0x006Ac68Ea58Ea14cEd038bE25350A44929ADbAda`
 
-**Sample Vesting Schedules (~10 schedules):**
+**Diverse Test Data (12 Vesting Schedules - 15.65M PROJ Locked):**
 
-| Token | Status  | Total Amount | Cliff | Duration | Notes                 |
-| ----- | ------- | ------------ | ----- | -------- | --------------------- |
-| PROJ  | Active  | 250,000      | None  | 1yr      | Started 30 days ago   |
-| PROJ  | Pending | 500,000      | 3mo   | 1yr      | Waiting for cliff     |
-| PROJ  | Active  | 750,000      | 1mo   | 1yr      | Cliff passed, vesting |
-| PROJ  | Pending | 1,000,000    | 6mo   | 2yr      | Long-term vesting     |
-| PROJ  | Active  | 2,000,000    | 2wk   | 1yr      | 90 days into vesting  |
-| ...   | ...     | ...          | ...   | ...      | More test scenarios   |
+| Token | Status    | Total Amount | Vested % | Cliff | Duration | Notes                      |
+| ----- | --------- | ------------ | -------- | ----- | -------- | -------------------------- |
+| PROJ  | Active    | 500,000      | 75%      | None  | 1yr      | 90 days vesting            |
+| PROJ  | Active    | 1,000,000    | 50%      | 1mo   | 1yr      | 180 days, cliff passed     |
+| PROJ  | Active    | 250,000      | 17%      | 1wk   | 6mo      | Early stage                |
+| PROJ  | Completed | 2,000,000    | 100%     | 3mo   | 1yr      | Fully unlocked, claimable! |
+| PROJ  | Pending   | 750,000      | 0%       | 1mo   | 1yr      | Starts in 15 days          |
+| PROJ  | Pending   | 300,000      | 0%       | 2wk   | 6mo      | Starts in 7 days           |
+| PROJ  | Active    | 450,000      | 67%      | None  | 3mo      | Fast vest (60/90 days)     |
+| PROJ  | Active    | 5,000,000    | 25%      | 6mo   | 2yr      | Long-term vest             |
+| PROJ  | Active    | 800,000      | 12%      | 1mo   | 1yr      | Cliff just passed          |
+| PROJ  | Active    | 1,500,000    | 55%      | 2mo   | 1yr      | Mid-stage vesting          |
+| PROJ  | Active    | 100,000      | 50%      | None  | 1mo      | Fast short-term            |
+| PROJ  | Pending   | 3,000,000    | 0%       | 3mo   | 2yr      | Starts in 30 days          |
+
+**Distribution:**
+
+- ✅ **Active:** 8 schedules (currently vesting)
+- ⏳ **Pending:** 3 schedules (not started yet)
+- 🎉 **Completed:** 1 schedule (100% unlocked, ready to claim)
 
 **View on Etherscan:**
 
-- [Vesting Contract](https://sepolia.etherscan.io/address/0x50DD7096fAB68990Ef61430FF8b6a25D0054A857)
+- [Optimized Vesting Contract](https://sepolia.etherscan.io/address/0x186FBa7B212C5aCCAe3f264178f28922080Bf5a5)
+- [PROJ Token Contract](https://sepolia.etherscan.io/address/0x10FDc7A86a2EB3864b18e26B5a204134DD85Cb1c)
 
 ---
 

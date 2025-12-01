@@ -100,24 +100,38 @@
 
 ## 📊 测试数据说明
 
-部署在 Sepolia 的智能合约：
+部署在 Sepolia 的**优化版智能合约**：
 
-- **Vesting Contract:** `0x50DD7096fAB68990Ef61430FF8b6a25D0054A857`
-- **PROJ Token:** `0x334ea69ed935F5c46D777506c83262DBAD59931A`
+- **Vesting Contract (优化版):** `0x186FBa7B212C5aCCAe3f264178f28922080Bf5a5`
+- **PROJ Token:** `0x10FDc7A86a2EB3864b18e26B5a204134DD85Cb1c`
 
 在 Etherscan 查看：
 
-- [Vesting Contract on Sepolia](https://sepolia.etherscan.io/address/0x50DD7096fAB68990Ef61430FF8b6a25D0054A857)
+- [Optimized Vesting Contract](https://sepolia.etherscan.io/address/0x186FBa7B212C5aCCAe3f264178f28922080Bf5a5)
+- [PROJ Token Contract](https://sepolia.etherscan.io/address/0x10FDc7A86a2EB3864b18e26B5a204134DD85Cb1c)
 
-测试账户拥有的 Schedules：
-| # | 金额 | 状态 | Cliff | 期限 | 说明 |
-|---|------|------|-------|------|------|
-| 1 | 500K PROJ | Pending | 3 个月 | 1 年 | 等待 cliff |
-| 2 | 250K PROJ | Active | 无 | 1 年 | 已可 claim |
-| 3 | 1M PROJ | Pending | 6 个月 | 2 年 | 长期 cliff |
-| 4 | 750K PROJ | Active | 已过 | 1 年 | 部分可 claim |
-| 5 | 100K PROJ | Pending | 1 个月 | 6 个月 | 短期测试 |
-| ... | ... | ... | ... | ... | 总计约 10 个 |
+**多样化测试数据（12 个 Schedules - 1565 万 PROJ 锁定）：**
+
+| #   | 金额      | 状态      | 进度 | Cliff | 期限 | 说明               |
+| --- | --------- | --------- | ---- | ----- | ---- | ------------------ |
+| 1   | 500K PROJ | Active    | 75%  | 无    | 1 年 | 90 天进行中        |
+| 2   | 1M PROJ   | Active    | 50%  | 1 月  | 1 年 | 180 天，cliff 已过 |
+| 3   | 250K PROJ | Active    | 17%  | 1 周  | 6 月 | 早期阶段           |
+| 4   | 2M PROJ   | Completed | 100% | 3 月  | 1 年 | 全部解锁，可领取！ |
+| 5   | 750K PROJ | Pending   | 0%   | 1 月  | 1 年 | 15 天后开始        |
+| 6   | 300K PROJ | Pending   | 0%   | 2 周  | 6 月 | 7 天后开始         |
+| 7   | 450K PROJ | Active    | 67%  | 无    | 3 月 | 快速解锁(60/90 天) |
+| 8   | 5M PROJ   | Active    | 25%  | 6 月  | 2 年 | 长期锁定           |
+| 9   | 800K PROJ | Active    | 12%  | 1 月  | 1 年 | Cliff 刚过         |
+| 10  | 1.5M PROJ | Active    | 55%  | 2 月  | 1 年 | 中期进度           |
+| 11  | 100K PROJ | Active    | 50%  | 无    | 1 月 | 快速短期           |
+| 12  | 3M PROJ   | Pending   | 0%   | 3 月  | 2 年 | 30 天后开始        |
+
+**分布情况：**
+
+- ✅ **Active:** 8 个（正在解锁中）
+- ⏳ **Pending:** 3 个（尚未开始）
+- 🎉 **Completed:** 1 个（100%解锁，可全额领取）
 
 ---
 
