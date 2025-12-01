@@ -20,10 +20,11 @@ export const CONTRACT_ADDRESSES = {
         },
     },
     // Sepolia Testnet (chainId: 0xaa36a7 / 11155111)
+    // Using Optimized TokenVesting Contract
     sepolia: {
-        vesting: '0x50DD7096fAB68990Ef61430FF8b6a25D0054A857',
+        vesting: '0xeb6c2E5fab3F8c51C7d29635F4669126FF2B7BFB', // Optimized version
         tokens: {
-            PROJ: '0x334ea69ed935F5c46D777506c83262DBAD59931A',
+            PROJ: '0x6dAF1681Ec0fB7efF7a3938e854fa676BddA69eE',
             TEAM: '', // Not deployed yet
             EARLY: '', // Not deployed yet
             ADVISOR: '', // Not deployed yet
