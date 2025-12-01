@@ -1,0 +1,237 @@
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">Vesting Schedules</h1>
+                <p class="text-gray-600 dark:text-gray-400">Manage and claim your vested tokens</p>
+            </div>
+            <a
+                [routerLink]="['/vesting/dashboard']"
+                class="flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+                <span class="icon-[carbon--dashboard]"></span>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div
+        *ngIf="successMessage"
+        class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20"
+    >
+        <div class="flex items-center gap-3">
+            <span class="icon-[carbon--checkmark-filled] text-2xl text-green-600 dark:text-green-400"></span>
+            <p class="text-green-800 dark:text-green-200">{{ successMessage }}</p>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div
+        *ngIf="error"
+        class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20"
+    >
+        <div class="flex items-center gap-3">
+            <span class="icon-[carbon--warning-filled] text-2xl text-red-600 dark:text-red-400"></span>
+            <p class="text-red-800 dark:text-red-200">{{ error }}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-6">
+        <h3 class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Status:</h3>
+        <div class="flex flex-wrap gap-3">
+            <button
+                (click)="setFilter('all')"
+                [ngClass]="{
+                    'bg-blue-600 text-white shadow-lg': isFilterActive('all'),
+                    'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700':
+                        !isFilterActive('all')
+                }"
+                class="rounded-lg px-5 py-2.5 font-medium transition-all"
+            >
+                <span class="icon-[carbon--list] mr-2 inline-block"></span>
+                All Schedules
+            </button>
+            <button
+                (click)="setFilter(VestingStatus.ACTIVE)"
+                [ngClass]="{
+                    'bg-green-600 text-white shadow-lg': isFilterActive(VestingStatus.ACTIVE),
+                    'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700':
+                        !isFilterActive(VestingStatus.ACTIVE)
+                }"
+                class="rounded-lg px-5 py-2.5 font-medium transition-all"
+            >
+                <span class="icon-[carbon--checkmark-filled] mr-2 inline-block"></span>
+                Active
+            </button>
+            <button
+                (click)="setFilter(VestingStatus.PENDING)"
+                [ngClass]="{
+                    'bg-yellow-600 text-white shadow-lg': isFilterActive(VestingStatus.PENDING),
+                    'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700':
+                        !isFilterActive(VestingStatus.PENDING)
+                }"
+                class="rounded-lg px-5 py-2.5 font-medium transition-all"
+            >
+                <span class="icon-[carbon--time] mr-2 inline-block"></span>
+                Pending
+            </button>
+            <button
+                (click)="setFilter(VestingStatus.COMPLETED)"
+                [ngClass]="{
+                    'bg-blue-600 text-white shadow-lg': isFilterActive(VestingStatus.COMPLETED),
+                    'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700':
+                        !isFilterActive(VestingStatus.COMPLETED)
+                }"
+                class="rounded-lg px-5 py-2.5 font-medium transition-all"
+            >
+                <span class="icon-[carbon--checkmark-outline] mr-2 inline-block"></span>
+                Completed
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div
+        *ngIf="loading"
+        class="flex items-center justify-center py-12"
+    >
+        <div class="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Schedules Table -->
+    <div
+        *ngIf="!loading"
+        class="overflow-x-auto rounded-lg bg-white shadow dark:bg-gray-800"
+    >
+        <table class="w-full text-left text-sm">
+            <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
+                <tr>
+                    <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Token</th>
+                    <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Total</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Claimable</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Claimed</th>
+                    <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Locked</th>
+                    <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Progress</th>
+                    <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr
+                    *ngFor="let schedule of filteredSchedules"
+                    class="border-b border-gray-100 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50"
+                >
+                    <!-- Token Name & Symbol -->
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-gray-900 dark:text-white">{{ schedule.token.name }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ schedule.token.symbol }}</div>
+                    </td>
+
+                    <!-- Status -->
+                    <td class="px-4 py-3">
+                        <span
+                            [class]="getStatusColor(schedule.status)"
+                            class="inline-block rounded-full px-2 py-1 text-xs font-medium"
+                        >
+                            {{ schedule.status }}
+                        </span>
+                    </td>
+
+                    <!-- Total Amount -->
+                    <td class="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
+                        {{
+                            parseFloat(getRelease(schedule).total).toLocaleString('en-US', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            })
+                        }}
+                    </td>
+
+                    <!-- Claimable -->
+                    <td class="px-4 py-3 text-right font-semibold text-green-600 dark:text-green-400">
+                        {{
+                            parseFloat(getRelease(schedule).claimable).toLocaleString('en-US', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            })
+                        }}
+                    </td>
+
+                    <!-- Claimed -->
+                    <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
+                        {{
+                            parseFloat(getRelease(schedule).claimed).toLocaleString('en-US', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            })
+                        }}
+                    </td>
+
+                    <!-- Locked -->
+                    <td class="px-4 py-3 text-right text-gray-600 dark:text-gray-400">
+                        {{
+                            parseFloat(getRelease(schedule).locked).toLocaleString('en-US', {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            })
+                        }}
+                    </td>
+
+                    <!-- Progress -->
+                    <td class="px-4 py-3">
+                        <div class="flex flex-col items-center gap-1">
+                            <span class="text-xs font-medium text-gray-900 dark:text-white">
+                                {{ getRelease(schedule).progress.toFixed(1) }}%
+                            </span>
+                            <div class="h-1.5 w-16 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                                <div
+                                    class="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-600"
+                                    [style.width.%]="getRelease(schedule).progress"
+                                ></div>
+                            </div>
+                        </div>
+                    </td>
+
+                    <!-- Action -->
+                    <td class="px-4 py-3 text-center">
+                        <button
+                            *ngIf="hasClaimable(schedule)"
+                            (click)="claimTokens(schedule)"
+                            [disabled]="claiming"
+                            class="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Claim
+                        </button>
+                        <span
+                            *ngIf="!hasClaimable(schedule)"
+                            class="text-xs text-gray-400 dark:text-gray-500"
+                        >
+                            -
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Empty State -->
+    <div
+        *ngIf="!loading && filteredSchedules.length === 0"
+        class="py-12 text-center"
+    >
+        <span class="icon-[carbon--calendar] mb-4 block text-6xl text-gray-300 dark:text-gray-700"></span>
+        <h3 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
+            No {{ filterStatus !== 'all' ? filterStatus : '' }} Schedules Found
+        </h3>
+        <p class="mb-4 text-gray-600 dark:text-gray-400">Try adjusting your filter or check back later.</p>
+        <button
+            (click)="setFilter('all')"
+            class="rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
+        >
+            Show All Schedules
+        </button>
+    </div>
+</div>
