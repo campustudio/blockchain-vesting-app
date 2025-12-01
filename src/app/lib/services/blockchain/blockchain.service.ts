@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESSES, CONTRACT_ABIS } from '@lib/constants/contracts.constant';
+import { getContractAddresses, CONTRACT_ABIS } from '@lib/constants/contracts.constant';
 import type { VestingSchedule } from '@lib/interfaces/vesting.interface';
 import { VestingStatus } from '@lib/interfaces/vesting.interface';
 
@@ -14,16 +14,26 @@ import { VestingStatus } from '@lib/interfaces/vesting.interface';
 export class BlockchainService {
     private _provider: ethers.providers.Web3Provider | null = null;
     private _vestingContract: ethers.Contract | null = null;
+    private _currentChainId: string | null = null;
 
     /**
      * Initialize provider and contracts
      */
     async initialize(ethereum: unknown): Promise<void> {
-        // Simple initialization - let's see what actually works
+        // Initialize provider
         this._provider = new ethers.providers.Web3Provider(ethereum as ethers.providers.ExternalProvider);
 
+        // Get current network
+        const network = await this._provider.getNetwork();
+        this._currentChainId = `0x${network.chainId.toString(16)}`;
+        console.log('🌐 Current network chainId:', this._currentChainId);
+
+        // Get contract addresses for current network
+        const addresses = getContractAddresses(this._currentChainId);
+        console.log('📋 Using contract addresses:', addresses);
+
         const signer = this._provider.getSigner();
-        this._vestingContract = new ethers.Contract(CONTRACT_ADDRESSES.vesting, CONTRACT_ABIS.vesting, signer);
+        this._vestingContract = new ethers.Contract(addresses.vesting, CONTRACT_ABIS.vesting, signer);
 
         console.log('✅ BlockchainService initialized');
     }
