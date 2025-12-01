@@ -1,0 +1,15 @@
+# Hardhat
+hardhat.config.ts
+scripts/**/*.ts
+test/**/*.ts
+contracts/
+artifacts/
+cache/
+typechain-types/
+
+# Build
+dist/
+.angular/
+
+# Dependencies
+node_modules/

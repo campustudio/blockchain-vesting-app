@@ -3,7 +3,7 @@
  */
 
 import type { VestingRelease, VestingSchedule, VestingStatus } from '@lib/interfaces/vesting.interface';
-import { formatUnits } from 'ethers';
+import { ethers } from 'ethers';
 
 /**
  * Calculate vesting release amounts at current time
@@ -21,11 +21,11 @@ export function calculateVestingRelease(schedule: VestingSchedule, currentTime: 
     // If current time is before start + cliff, nothing is vested
     if (currentTime < startTime + cliff) {
         return {
-            total: formatUnits(totalAmountWei, schedule.token.decimals),
+            total: ethers.utils.formatUnits(totalAmountWei, schedule.token.decimals),
             vested: '0',
-            claimed: formatUnits(releasedWei, schedule.token.decimals),
+            claimed: ethers.utils.formatUnits(releasedWei, schedule.token.decimals),
             claimable: '0',
-            locked: formatUnits(totalAmountWei, schedule.token.decimals),
+            locked: ethers.utils.formatUnits(totalAmountWei, schedule.token.decimals),
             progress: 0,
         };
     }
@@ -34,10 +34,10 @@ export function calculateVestingRelease(schedule: VestingSchedule, currentTime: 
     if (currentTime >= startTime + duration) {
         const claimableWei = totalAmountWei - releasedWei;
         return {
-            total: formatUnits(totalAmountWei, schedule.token.decimals),
-            vested: formatUnits(totalAmountWei, schedule.token.decimals),
-            claimed: formatUnits(releasedWei, schedule.token.decimals),
-            claimable: formatUnits(claimableWei, schedule.token.decimals),
+            total: ethers.utils.formatUnits(totalAmountWei, schedule.token.decimals),
+            vested: ethers.utils.formatUnits(totalAmountWei, schedule.token.decimals),
+            claimed: ethers.utils.formatUnits(releasedWei, schedule.token.decimals),
+            claimable: ethers.utils.formatUnits(claimableWei, schedule.token.decimals),
             locked: '0',
             progress: 100,
         };
@@ -51,11 +51,11 @@ export function calculateVestingRelease(schedule: VestingSchedule, currentTime: 
     const progress = (timeElapsed / duration) * 100;
 
     return {
-        total: formatUnits(totalAmountWei, schedule.token.decimals),
-        vested: formatUnits(vestedWei, schedule.token.decimals),
-        claimed: formatUnits(releasedWei, schedule.token.decimals),
-        claimable: formatUnits(claimableWei > 0n ? claimableWei : 0n, schedule.token.decimals),
-        locked: formatUnits(lockedWei, schedule.token.decimals),
+        total: ethers.utils.formatUnits(totalAmountWei, schedule.token.decimals),
+        vested: ethers.utils.formatUnits(vestedWei, schedule.token.decimals),
+        claimed: ethers.utils.formatUnits(releasedWei, schedule.token.decimals),
+        claimable: ethers.utils.formatUnits(claimableWei > 0n ? claimableWei : 0n, schedule.token.decimals),
+        locked: ethers.utils.formatUnits(lockedWei, schedule.token.decimals),
         progress: Math.min(progress, 100),
     };
 }
@@ -125,7 +125,7 @@ export function formatDuration(seconds: number): string {
  * @returns Formatted amount string
  */
 export function formatTokenAmount(amount: string, decimals: number, displayDecimals = 2): string {
-    const formatted = formatUnits(amount, decimals);
+    const formatted = ethers.utils.formatUnits(amount, decimals);
     const num = parseFloat(formatted);
     return num.toLocaleString('en-US', {
         minimumFractionDigits: 0,

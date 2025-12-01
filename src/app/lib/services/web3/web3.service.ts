@@ -1,7 +1,7 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { getNetworkName, isNetworkSupported } from '@lib/constants/networks.constant';
 import type { EthereumProvider, NetworkInfo, WalletState } from '@lib/interfaces/web3.interface';
-import { BrowserProvider } from 'ethers';
+import { ethers } from 'ethers';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
 /**
@@ -247,7 +247,7 @@ export class Web3Service implements OnDestroy {
         }
 
         try {
-            const provider = new BrowserProvider(this._ethereum);
+            const provider = new ethers.providers.Web3Provider(this._ethereum);
             const network = await provider.getNetwork();
 
             // Convert chainId to hexadecimal string
