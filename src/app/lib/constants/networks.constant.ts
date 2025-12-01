@@ -9,6 +9,7 @@
  */
 /* eslint-disable @typescript-eslint/naming-convention */
 export const SUPPORTED_NETWORKS: Record<string, string> = {
+    '0x7a69': 'Hardhat Local', // Chain ID 31337
     '0x1': 'Ethereum Mainnet',
     '0x5': 'Goerli Testnet',
     '0xaa36a7': 'Sepolia Testnet',

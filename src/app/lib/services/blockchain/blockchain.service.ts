@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 import { CONTRACT_ADDRESSES, CONTRACT_ABIS } from '@lib/constants/contracts.constant';
 import type { VestingSchedule } from '@lib/interfaces/vesting.interface';
+import { VestingStatus } from '@lib/interfaces/vesting.interface';
 
 /**
  * Blockchain Service
@@ -11,57 +12,165 @@ import type { VestingSchedule } from '@lib/interfaces/vesting.interface';
     providedIn: 'root',
 })
 export class BlockchainService {
-    private provider: ethers.providers.Web3Provider | null = null;
-    private vestingContract: ethers.Contract | null = null;
+    private _provider: ethers.providers.Web3Provider | null = null;
+    private _vestingContract: ethers.Contract | null = null;
 
     /**
      * Initialize provider and contracts
      */
-    async initialize(ethereum: any): Promise<void> {
-        this.provider = new ethers.providers.Web3Provider(ethereum);
-        this.vestingContract = new ethers.Contract(CONTRACT_ADDRESSES.vesting, CONTRACT_ABIS.vesting, this.provider);
+    async initialize(ethereum: unknown): Promise<void> {
+        // Simple initialization - let's see what actually works
+        this._provider = new ethers.providers.Web3Provider(ethereum as ethers.providers.ExternalProvider);
+
+        const signer = this._provider.getSigner();
+        this._vestingContract = new ethers.Contract(CONTRACT_ADDRESSES.vesting, CONTRACT_ABIS.vesting, signer);
+
+        console.log('✅ BlockchainService initialized');
     }
 
     /**
      * Get all vesting schedules for a beneficiary
      */
     async getVestingSchedules(beneficiary: string): Promise<VestingSchedule[]> {
-        if (!this.vestingContract) {
+        if (!this._vestingContract || !this._provider) {
             throw new Error('Contract not initialized');
         }
 
         try {
-            // Get schedule count for beneficiary
-            const count = await this.vestingContract.getVestingSchedulesCount(beneficiary);
+            // Get all schedule IDs for beneficiary
+            const scheduleIds: string[] = await this._vestingContract['getBeneficiarySchedules'](beneficiary);
+            console.log('📋 Got schedule IDs from contract:', scheduleIds, 'Count:', scheduleIds.length);
+
             const schedules: VestingSchedule[] = [];
 
             // Fetch each schedule
-            for (let i = 0; i < count.toNumber(); i++) {
-                const scheduleId = await this.vestingContract.computeVestingScheduleId(beneficiary, i);
-                const schedule = await this.vestingContract.getVestingSchedule(scheduleId);
+            for (const rawScheduleId of scheduleIds) {
+                // Convert to proper bytes32 format (66 chars: 0x + 64 hex digits)
+                // First handle odd-length hex strings
+                let hexValue = String(rawScheduleId);
+                if (hexValue.startsWith('0x') && hexValue.length % 2 !== 0) {
+                    // Odd length: insert '0' after '0x'
+                    hexValue = '0x0' + hexValue.slice(2);
+                }
 
-                // Get token info
-                const tokenContract = new ethers.Contract(schedule.token, CONTRACT_ABIS.token, this.provider!);
-                const symbol = await tokenContract.symbol();
-                const name = await tokenContract.name();
-                const decimals = await tokenContract.decimals();
+                const scheduleId = ethers.utils.hexZeroPad(hexValue, 32);
+                console.log('📋 Processing scheduleId:', scheduleId, 'Length:', scheduleId.length);
+
+                const result = await this._vestingContract['getVestingSchedule'](scheduleId);
+
+                console.log('🔍 Raw contract result for schedule:', scheduleId);
+                console.log('🔍 Result indices:');
+                console.log('  [0]:', result[0]);
+                console.log('  [1]:', result[1]);
+                console.log('  [2]:', result[2]);
+                console.log('  [3]:', result[3]);
+                console.log('  [4]:', result[4]);
+                console.log('  [5]:', result[5]);
+                console.log('  [6]:', result[6]);
+                console.log('  [7]:', result[7]);
+                console.log('  [8]:', result[8]);
+
+                // Use array indices - named properties are incorrectly mapped by ethers.js
+                const scheduleBeneficiary = result[0];
+                const token = result[1];
+                const totalAmount = result[2];
+                const released = result[3];
+                const startTime = result[4];
+                const cliff = result[5];
+                const duration = result[6];
+                const revocable = result[7];
+                const revoked = result[8];
+
+                console.log('📋 Schedule details:', {
+                    scheduleId,
+                    beneficiary: scheduleBeneficiary,
+                    requestedBeneficiary: beneficiary,
+                    match: String(scheduleBeneficiary).toLowerCase() === beneficiary.toLowerCase(),
+                });
+
+                // Convert token address to string (in case it's not)
+                const tokenAddress = String(token);
+
+                // Get token info with signer to avoid ENS lookups
+                const signer = this._provider.getSigner();
+                const tokenContract = new ethers.Contract(tokenAddress, CONTRACT_ABIS.token, signer);
+
+                // Use try-catch for token info to handle ENS errors gracefully
+                let symbol = 'UNKNOWN';
+                let name = 'Unknown Token';
+                let decimals = 18;
+
+                try {
+                    symbol = await tokenContract['symbol']();
+                    name = await tokenContract['name']();
+                    decimals = await tokenContract['decimals']();
+                } catch (tokenError) {
+                    console.warn('⚠️ Failed to fetch token info (using defaults):', tokenError);
+                    // Use defaults - schedules will still load
+                }
+
+                // Safely convert to numbers (handle both BigNumber and plain numbers)
+                const startTimeNum =
+                    startTime && typeof startTime.toNumber === 'function' ? startTime.toNumber() : Number(startTime);
+                const cliffNum = cliff && typeof cliff.toNumber === 'function' ? cliff.toNumber() : Number(cliff);
+                const durationNum =
+                    duration && typeof duration.toNumber === 'function' ? duration.toNumber() : Number(duration);
+
+                // Calculate status
+                const currentTime = Math.floor(Date.now() / 1000);
+                let status: VestingStatus;
+
+                console.log('⏰ Status calculation:', {
+                    currentTime,
+                    startTime: startTimeNum,
+                    cliff: cliffNum,
+                    cliffEndTime: startTimeNum + cliffNum,
+                    duration: durationNum,
+                    endTime: startTimeNum + durationNum,
+                    revoked,
+                    isBeforeStart: currentTime < startTimeNum,
+                    isInCliff: currentTime < startTimeNum + cliffNum,
+                    isCompleted: currentTime >= startTimeNum + durationNum,
+                });
+
+                if (revoked) {
+                    status = VestingStatus.REVOKED;
+                } else if (currentTime < startTimeNum) {
+                    // Not started yet
+                    status = VestingStatus.PENDING;
+                } else if (currentTime < startTimeNum + cliffNum) {
+                    // Started but still in cliff period
+                    status = VestingStatus.PENDING;
+                } else if (currentTime >= startTimeNum + durationNum) {
+                    // Fully vested
+                    status = VestingStatus.COMPLETED;
+                } else {
+                    // Past cliff, before completion
+                    status = VestingStatus.ACTIVE;
+                }
+
+                console.log('💾 Saving schedule with ID:', scheduleId, 'Length:', scheduleId.length);
+                console.log('💰 totalAmount:', totalAmount, 'toString:', totalAmount.toString());
+                console.log('💰 released:', released, 'toString:', released.toString());
+                console.log('💰 decimals:', decimals);
 
                 schedules.push({
                     id: scheduleId,
-                    beneficiary: schedule.beneficiary,
+                    beneficiary,
                     token: {
-                        address: schedule.token,
+                        address: tokenAddress as string,
                         symbol,
                         name,
                         decimals,
                     },
-                    totalAmount: schedule.amountTotal.toString(),
-                    released: schedule.released.toString(),
-                    startTime: schedule.start.toNumber(),
-                    cliff: schedule.cliff.toNumber(),
-                    duration: schedule.duration.toNumber(),
-                    revocable: schedule.revocable,
-                    revoked: schedule.revoked,
+                    totalAmount: totalAmount.toString(),
+                    released: released.toString(),
+                    startTime: startTimeNum,
+                    cliff: cliffNum,
+                    duration: durationNum,
+                    revocable,
+                    revoked,
+                    status,
                 });
             }
 
@@ -73,21 +182,64 @@ export class BlockchainService {
     }
 
     /**
-     * Claim vested tokens
+     * Get releasable amount for a schedule
      */
-    async claimTokens(scheduleId: string, amount: string): Promise<string> {
-        if (!this.vestingContract || !this.provider) {
+    async getReleasableAmount(scheduleId: string): Promise<string> {
+        if (!this._vestingContract) {
             throw new Error('Contract not initialized');
         }
 
         try {
-            const signer = this.provider.getSigner();
-            const contractWithSigner = this.vestingContract.connect(signer);
+            // Ensure scheduleId is properly formatted as bytes32
+            // First handle odd-length hex strings
+            let hexValue = scheduleId;
+            if (hexValue.startsWith('0x') && hexValue.length % 2 !== 0) {
+                // Odd length: insert '0' after '0x'
+                hexValue = '0x0' + hexValue.slice(2);
+            }
 
-            const tx = await contractWithSigner.release(scheduleId, amount);
+            const formattedScheduleId = ethers.utils.hexZeroPad(hexValue, 32);
+
+            const amount = await this._vestingContract['computeReleasableAmount'](formattedScheduleId);
+            return amount.toString();
+        } catch (error) {
+            console.error('Error computing releasable amount:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Claim vested tokens
+     */
+    async claimTokens(scheduleId: string, tokenAddress: string): Promise<string> {
+        if (!this._vestingContract || !this._provider) {
+            throw new Error('Contract not initialized');
+        }
+
+        try {
+            // Ensure scheduleId is properly formatted as bytes32
+            let hexValue = scheduleId;
+            if (hexValue.startsWith('0x') && hexValue.length % 2 !== 0) {
+                // Odd length: insert '0' after '0x'
+                hexValue = '0x0' + hexValue.slice(2);
+            }
+
+            const formattedScheduleId = ethers.utils.hexZeroPad(hexValue, 32);
+
+            console.log('🎯 claimTokens called with:', {
+                originalScheduleId: scheduleId,
+                formattedScheduleId,
+                scheduleIdLength: formattedScheduleId.length,
+                tokenAddress,
+            });
+
+            const signer = this._provider.getSigner();
+            const contractWithSigner = this._vestingContract.connect(signer);
+
+            const tx = await contractWithSigner['release'](formattedScheduleId, tokenAddress);
             const receipt = await tx.wait();
 
-            return receipt.transactionHash;
+            return receipt.transactionHash as string;
         } catch (error) {
             console.error('Error claiming tokens:', error);
             throw error;
@@ -98,6 +250,6 @@ export class BlockchainService {
      * Get contract provider
      */
     getProvider(): ethers.providers.Web3Provider | null {
-        return this.provider;
+        return this._provider;
     }
 }

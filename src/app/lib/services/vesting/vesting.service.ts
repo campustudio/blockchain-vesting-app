@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import type {
     ClaimTransaction,
     VestingRelease,
@@ -9,6 +9,7 @@ import { TransactionStatus, VestingStatus } from '@lib/interfaces/vesting.interf
 import { getCurrentTimestamp, MOCK_VESTING_SCHEDULES, MOCK_WALLET_ADDRESS } from '@lib/constants/mock-data.constant';
 import { calculateVestingRelease, getVestingStatus } from '@lib/utils/vesting.util';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { BlockchainService } from '@lib/services/blockchain/blockchain.service';
 
 /**
  * Vesting Service
@@ -35,9 +36,11 @@ export class VestingService {
     // Current wallet address
     private _currentAddress: string | null = null;
 
+    // Inject BlockchainService
+    private readonly _blockchainService = inject(BlockchainService);
+
     constructor() {
-        // Initialize with mock data
-        this._loadMockData();
+        // Don't load mock data - we'll load real blockchain data when wallet connects
     }
 
     /**
@@ -50,24 +53,25 @@ export class VestingService {
         this._currentAddress = address;
 
         try {
-            // Simulate API call delay
-            await this._delay(500);
+            // Fetch real vesting schedules from blockchain
+            const schedules = await this._blockchainService.getVestingSchedules(address);
 
-            // In a real app, this would fetch from blockchain/API
-            // For now, use mock data
-            const schedules = this._filterSchedulesByAddress(address);
+            console.log('📦 VestingService updating schedules:', schedules.length, schedules);
+            this._vestingSchedules$.next(schedules);
+            console.log(
+                '📦 VestingService BehaviorSubject updated, current value:',
+                this._vestingSchedules$.value.length,
+            );
 
-            // Update statuses based on current time
-            const currentTime = getCurrentTimestamp();
-            const updatedSchedules = schedules.map((schedule) => ({
-                ...schedule,
-                status: getVestingStatus(schedule, currentTime),
-            }));
+            this._updateStats(schedules);
 
-            this._vestingSchedules$.next(updatedSchedules);
-            this._updateStats(updatedSchedules);
+            console.log('✅ Real vesting schedules loaded successfully:', schedules.length, 'schedules');
         } catch (error) {
+            console.error('❌ Failed to load vesting schedules:', error);
             this._handleError(error);
+
+            // Don't fallback to mock data - show the actual error
+            // This ensures we're always working with real blockchain data
         } finally {
             this._loading$.next(false);
         }
@@ -98,6 +102,11 @@ export class VestingService {
         this._error$.next(null);
 
         try {
+            // Check if blockchain service is initialized
+            if (!this._blockchainService.getProvider()) {
+                throw new Error('Wallet not connected. Please connect your wallet first.');
+            }
+
             const schedule = this._vestingSchedules$.value.find((s) => s.id === scheduleId);
             if (!schedule) {
                 throw new Error('Vesting schedule not found');
@@ -108,11 +117,10 @@ export class VestingService {
                 throw new Error('No tokens available to claim');
             }
 
-            // Simulate blockchain transaction
-            await this._delay(2000);
+            // Execute real blockchain transaction
+            const txHash = await this._blockchainService.claimTokens(scheduleId, schedule.token.address);
 
-            // Generate mock transaction
-            const txHash = `0x${Math.random().toString(16).substring(2)}`;
+            // Create transaction record
             const transaction: ClaimTransaction = {
                 id: txHash,
                 vestingId: scheduleId,
@@ -125,29 +133,81 @@ export class VestingService {
             const history = [...this._claimHistory$.value, transaction];
             this._claimHistory$.next(history);
 
-            // Update released amount in schedule
-            const currentTime = getCurrentTimestamp();
-            const updatedSchedules = this._vestingSchedules$.value.map((s) => {
-                if (s.id === scheduleId) {
-                    const claimed = BigInt(s.released);
-                    const vested = this._calculateVestedAmount(s, currentTime);
-                    const claimable = vested - claimed;
-                    const newReleased = (claimed + (claimable > 0n ? claimable : 0n)).toString();
-                    return { ...s, released: newReleased };
-                }
-                return s;
-            });
-
-            this._vestingSchedules$.next(updatedSchedules);
-            this._updateStats(updatedSchedules);
+            // Reload schedules to get updated data from blockchain
+            if (this._currentAddress) {
+                await this.loadVestingSchedules(this._currentAddress);
+            }
 
             return txHash;
         } catch (error) {
+            console.error('Claim failed:', error);
+
+            // Check if user rejected the transaction
+            const errorMessage = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+            if (
+                errorMessage.includes('user rejected') ||
+                errorMessage.includes('user denied') ||
+                errorMessage.includes('user cancelled')
+            ) {
+                console.log('ℹ️ User cancelled the transaction');
+                this._error$.next('Transaction cancelled by user');
+                // Don't throw - just return gracefully
+                throw new Error('Transaction cancelled');
+            }
+
             this._handleError(error);
             throw error;
         } finally {
             this._loading$.next(false);
         }
+    }
+
+    // Keep old implementation as backup
+    private async _claimTokensMock(scheduleId: string): Promise<string> {
+        const schedule = this._vestingSchedules$.value.find((s) => s.id === scheduleId);
+        if (!schedule) {
+            throw new Error('Vesting schedule not found');
+        }
+
+        const release = this.getVestingRelease(scheduleId);
+        if (!release || parseFloat(release.claimable) === 0) {
+            throw new Error('No tokens available to claim');
+        }
+
+        // Simulate blockchain transaction
+        await this._delay(2000);
+
+        // Generate mock transaction
+        const txHash = `0x${Math.random().toString(16).substring(2)}`;
+        const transaction: ClaimTransaction = {
+            id: txHash,
+            vestingId: scheduleId,
+            amount: release.claimable,
+            timestamp: getCurrentTimestamp(),
+            status: TransactionStatus.CONFIRMED,
+        };
+
+        // Update claim history
+        const history = [...this._claimHistory$.value, transaction];
+        this._claimHistory$.next(history);
+
+        // Update released amount in schedule
+        const currentTime = getCurrentTimestamp();
+        const updatedSchedules = this._vestingSchedules$.value.map((s) => {
+            if (s.id === scheduleId) {
+                const claimed = BigInt(s.released);
+                const vested = this._calculateVestedAmount(s, currentTime);
+                const claimable = vested - claimed;
+                const newReleased = (claimed + (claimable > 0n ? claimable : 0n)).toString();
+                return { ...s, released: newReleased };
+            }
+            return s;
+        });
+
+        this._vestingSchedules$.next(updatedSchedules);
+        this._updateStats(updatedSchedules);
+
+        return txHash;
     }
 
     /**

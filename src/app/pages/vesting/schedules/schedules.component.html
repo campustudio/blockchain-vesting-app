@@ -16,6 +16,32 @@
         </div>
     </div>
 
+    <!-- Wallet Not Connected Warning -->
+    <div
+        *ngIf="!isWalletConnected"
+        class="mb-6 rounded-lg border-2 border-orange-200 bg-orange-50 p-6 dark:border-orange-800 dark:bg-orange-900/20"
+    >
+        <div class="flex flex-col items-center gap-4 text-center md:flex-row md:text-left">
+            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/40">
+                <span class="icon-[carbon--warning] text-3xl text-orange-600 dark:text-orange-400"></span>
+            </div>
+            <div class="flex-1">
+                <h3 class="mb-1 text-lg font-semibold text-orange-900 dark:text-orange-100">Wallet Not Connected</h3>
+                <p class="text-orange-700 dark:text-orange-300">
+                    Please connect your wallet to view and manage your vesting schedules. You need to connect a Web3
+                    wallet (like MetaMask) to interact with the blockchain.
+                </p>
+            </div>
+            <button
+                (click)="connectWallet()"
+                class="flex items-center gap-2 rounded-lg bg-orange-600 px-6 py-3 font-semibold text-white shadow-lg transition-all hover:scale-105 hover:bg-orange-700"
+            >
+                <span class="icon-[carbon--wallet] text-xl"></span>
+                <span>Connect Wallet</span>
+            </button>
+        </div>
+    </div>
+
     <!-- Success Message -->
     <div
         *ngIf="successMessage"
@@ -39,7 +65,10 @@
     </div>
 
     <!-- Filters -->
-    <div class="mb-6">
+    <div
+        *ngIf="isWalletConnected"
+        class="mb-6"
+    >
         <h3 class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Status:</h3>
         <div class="flex flex-wrap gap-3">
             <button
@@ -95,7 +124,7 @@
 
     <!-- Loading State -->
     <div
-        *ngIf="loading"
+        *ngIf="loading && isWalletConnected"
         class="flex items-center justify-center py-12"
     >
         <div class="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
@@ -103,13 +132,14 @@
 
     <!-- Schedules Table -->
     <div
-        *ngIf="!loading"
+        *ngIf="!loading && isWalletConnected"
         class="overflow-x-auto rounded-lg bg-white shadow dark:bg-gray-800"
     >
         <table class="w-full text-left text-sm">
             <thead class="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
                 <tr>
                     <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Token</th>
+                    <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Start Date</th>
                     <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">Status</th>
                     <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Total</th>
                     <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Claimable</th>
@@ -128,6 +158,11 @@
                     <td class="px-4 py-3">
                         <div class="font-medium text-gray-900 dark:text-white">{{ schedule.token.name }}</div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">{{ schedule.token.symbol }}</div>
+                    </td>
+
+                    <!-- Start Date -->
+                    <td class="px-4 py-3 text-gray-700 dark:text-gray-300">
+                        {{ formatDate(schedule.startTime) }}
                     </td>
 
                     <!-- Status -->

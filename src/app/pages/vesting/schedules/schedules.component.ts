@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import type { VestingRelease, VestingSchedule } from '@lib/interfaces';
 import { VestingStatus } from '@lib/interfaces';
 import { VestingService } from '@lib/services/vesting/vesting.service';
+import { Web3Service } from '@lib/services/web3/web3.service';
 import {
     calculateVestingRelease,
     formatDate,
@@ -26,6 +27,7 @@ import { Subject, takeUntil } from 'rxjs';
 export class SchedulesComponent implements OnInit, OnDestroy {
     // Services
     private readonly _vestingService = inject(VestingService);
+    private readonly _web3Service = inject(Web3Service);
     private readonly _destroy$ = new Subject<void>();
 
     // State
@@ -35,6 +37,10 @@ export class SchedulesComponent implements OnInit, OnDestroy {
     claiming = false;
     error: string | null = null;
     successMessage: string | null = null;
+
+    // Wallet state
+    isWalletConnected = false;
+    walletAddress: string | null = null;
 
     // Filters
     filterStatus: VestingStatus | 'all' = 'all';
@@ -50,6 +56,15 @@ export class SchedulesComponent implements OnInit, OnDestroy {
     VestingStatus = VestingStatus;
 
     ngOnInit(): void {
+        // Subscribe to wallet connection state
+        this._web3Service.isConnected$.pipe(takeUntil(this._destroy$)).subscribe((connected) => {
+            this.isWalletConnected = connected;
+        });
+
+        this._web3Service.walletAddress$.pipe(takeUntil(this._destroy$)).subscribe((address) => {
+            this.walletAddress = address;
+        });
+
         // Subscribe to vesting schedules
         this._vestingService.vestingSchedules$.pipe(takeUntil(this._destroy$)).subscribe((schedules) => {
             this.schedules = schedules;
@@ -112,6 +127,16 @@ export class SchedulesComponent implements OnInit, OnDestroy {
         this.successMessage = null;
 
         try {
+            console.log(
+                '🔵 Component claimTokens - schedule.id:',
+                schedule.id,
+                'Type:',
+                typeof schedule.id,
+                'Length:',
+                schedule.id?.length,
+            );
+            console.log('🔵 Full schedule object:', schedule);
+
             const txHash = await this._vestingService.claimTokens(schedule.id);
             const release = this.getRelease(schedule);
 
@@ -131,7 +156,16 @@ export class SchedulesComponent implements OnInit, OnDestroy {
             }, 5000);
         } catch (error) {
             console.error('Claim error:', error);
-            this.error = error instanceof Error ? error.message : 'Failed to claim tokens';
+
+            // Check if user cancelled the transaction
+            const errorMessage = error instanceof Error ? error.message : 'Failed to claim tokens';
+            if (errorMessage === 'Transaction cancelled') {
+                // Don't show error for user cancellation - it's not an error
+                console.log('ℹ️ User cancelled the claim operation');
+                return; // Exit gracefully
+            }
+
+            this.error = errorMessage;
         } finally {
             this.claiming = false;
         }
@@ -167,5 +201,16 @@ export class SchedulesComponent implements OnInit, OnDestroy {
      */
     isFilterActive(status: VestingStatus | 'all'): boolean {
         return this.filterStatus === status;
+    }
+
+    /**
+     * Connect wallet
+     */
+    async connectWallet(): Promise<void> {
+        try {
+            await this._web3Service.connectWallet();
+        } catch (error) {
+            console.error('Failed to connect wallet:', error);
+        }
     }
 }

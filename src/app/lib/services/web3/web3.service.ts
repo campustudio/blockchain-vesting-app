@@ -1,6 +1,8 @@
-import { Injectable, NgZone, OnDestroy } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, inject } from '@angular/core';
 import { getNetworkName, isNetworkSupported } from '@lib/constants/networks.constant';
 import type { EthereumProvider, NetworkInfo, WalletState } from '@lib/interfaces/web3.interface';
+import { BlockchainService } from '../blockchain/blockchain.service';
+import { VestingService } from '../vesting/vesting.service';
 import { ethers } from 'ethers';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
@@ -31,6 +33,10 @@ export class Web3Service implements OnDestroy {
     // Save listener references for proper removal
     private _accountsChangedHandler?: (accounts: unknown) => void;
     private _chainChangedHandler?: (chainId: unknown) => void;
+
+    // Inject services
+    private readonly _blockchainService = inject(BlockchainService);
+    private readonly _vestingService = inject(VestingService);
 
     constructor(private readonly _ngZone: NgZone) {
         this._ethereum = window.ethereum;
@@ -96,6 +102,16 @@ export class Web3Service implements OnDestroy {
             // Get network information
             await this._updateNetworkInfo();
 
+            // Initialize blockchain service with provider
+            console.log('🔧 Initializing blockchain service...');
+            await this._blockchainService.initialize(this._ethereum);
+            console.log('✅ Blockchain service initialized');
+
+            // Load vesting schedules for connected wallet
+            console.log('📊 Loading vesting schedules...');
+            await this._vestingService.loadVestingSchedules(accounts[0]);
+            console.log('✅ Vesting schedules loaded');
+
             console.log('✅ Wallet connected:', accounts[0]);
         } catch (error: unknown) {
             this._handleError(error);
@@ -124,10 +140,20 @@ export class Web3Service implements OnDestroy {
      * Restore connection state from localStorage
      */
     private async _restoreConnection(): Promise<void> {
+        console.log('🔄 _restoreConnection called');
+
         // Check if there's a saved connection state
         const hasSavedConnection = localStorage.getItem('web3_connected') === 'true';
+        const savedAddress = localStorage.getItem('web3_last_address');
+
+        console.log('🔄 Restore state:', {
+            hasSavedConnection,
+            savedAddress,
+            isMetaMaskInstalled: this.isMetaMaskInstalled,
+        });
 
         if (!hasSavedConnection || !this.isMetaMaskInstalled) {
+            console.log('⏭️ Skipping restore - no saved connection or MetaMask not installed');
             return;
         }
 
@@ -145,8 +171,28 @@ export class Web3Service implements OnDestroy {
                     console.log('🔄 Connection restored:', accounts[0]);
                 });
 
-                // Update network info (this method already uses NgZone internally)
-                await this._updateNetworkInfo();
+                try {
+                    // Update network info (this method already uses NgZone internally)
+                    await this._updateNetworkInfo();
+
+                    // Run initialization and data loading in NgZone to ensure change detection
+                    await this._ngZone.run(async () => {
+                        // Initialize blockchain service with provider
+                        console.log('🔧 Initializing blockchain service...');
+                        await this._blockchainService.initialize(this._ethereum);
+                        console.log('✅ Blockchain service initialized');
+
+                        // Load vesting schedules for connected wallet
+                        console.log('📊 Loading vesting schedules...');
+                        await this._vestingService.loadVestingSchedules(accounts[0]);
+                        console.log('✅ Vesting schedules loaded');
+
+                        console.log('✅ All services initialized after connection restore');
+                    });
+                } catch (error) {
+                    console.error('❌ Failed to initialize services:', error);
+                    // Don't disconnect, but log the error
+                }
             } else {
                 // If no accounts, clear saved state
                 localStorage.removeItem('web3_connected');
@@ -203,11 +249,11 @@ export class Web3Service implements OnDestroy {
     /**
      * Handle account changes
      */
-    private _handleAccountsChanged(accounts: string[]): void {
+    private async _handleAccountsChanged(accounts: string[]): Promise<void> {
         console.log('👤 Accounts changed:', accounts);
 
         // Execute state updates within Angular zone to ensure change detection
-        this._ngZone.run(() => {
+        await this._ngZone.run(async () => {
             if (accounts.length === 0) {
                 // User disconnected all accounts
                 console.log('🔌 User disconnected all accounts');
@@ -218,6 +264,15 @@ export class Web3Service implements OnDestroy {
                 const newAddress = accounts[0];
                 console.log('✅ Account switched:', { from: oldAddress, to: newAddress });
                 this._walletAddress$.next(newAddress);
+
+                // Reload vesting schedules for new account
+                console.log('📊 Reloading vesting schedules for new account...');
+                try {
+                    await this._vestingService.loadVestingSchedules(newAddress);
+                    console.log('✅ Vesting schedules reloaded for new account');
+                } catch (error) {
+                    console.error('❌ Failed to reload vesting schedules:', error);
+                }
             }
         });
     }
