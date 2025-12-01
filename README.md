@@ -2,7 +2,7 @@
 
 > **A professional token vesting schedule management platform with modern UI and Web3 integration**
 
-[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://blockchain-vesting-app.vercel.app)
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://blockchain-vesting-app-ihvy.vercel.app)
 [![Angular](https://img.shields.io/badge/Angular-16-red)](https://angular.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.3-38bdf8)](https://tailwindcss.com/)
@@ -11,7 +11,7 @@
 
 **📖 [View Complete Demo Guide](./DEMO_GUIDE.md)** - Step-by-step instructions for testing the application
 
-**Live Demo:** [https://blockchain-vesting-app.vercel.app](https://blockchain-vesting-app.vercel.app)
+**Live Demo:** [https://blockchain-vesting-app-ihvy.vercel.app](https://blockchain-vesting-app-ihvy.vercel.app)
 
 **Quick Test (3 steps):**
 
@@ -106,7 +106,7 @@ Visit `http://localhost:4200` to see the application.
 # Create production build
 npm run build
 
-# Output will be in dist/blockchain-vesting-app/browser/
+# Output will be in dist/blockchain-vesting-app/
 ```
 
 ---
@@ -186,28 +186,29 @@ Vesting rate: ~41,667 tokens/month
 
 ## 🛠️ Technology Stack
 
-| Technology          | Purpose                                           |
-| ------------------- | ------------------------------------------------- |
-| **Angular 16**      | Frontend framework with standalone components     |
-| **TypeScript 5.0**  | Type-safe development                             |
-| **RxJS 7.8**        | Reactive state management                         |
-| **TailwindCSS 3.3** | Utility-first styling                             |
-| **ethers.js 6**     | Ethereum interaction (ready for Web3 integration) |
-| **Iconify**         | Modern icon system                                |
+| Technology          | Purpose                                       |
+| ------------------- | --------------------------------------------- |
+| **Angular 16**      | Frontend framework with standalone components |
+| **TypeScript 5.0**  | Type-safe development                         |
+| **RxJS 7.8**        | Reactive state management                     |
+| **TailwindCSS 3.3** | Utility-first styling                         |
+| **ethers.js 5**     | Ethereum blockchain interaction               |
+| **Iconify**         | Modern icon system                            |
 
 ---
 
 ## 🔄 Future Enhancements
 
-### Phase 2: Blockchain Integration
+### ✅ Completed: Blockchain Integration
 
-- [ ] Connect to Sepolia testnet
-- [ ] Deploy vesting smart contract
-- [ ] Read real on-chain data
-- [ ] Execute actual claim transactions
-- [ ] Transaction history from blockchain
+- [x] Connected to Sepolia testnet
+- [x] Deployed vesting smart contract
+- [x] Read real on-chain data
+- [x] Execute actual claim transactions
+- [x] Multi-account support
+- [x] Network switching detection
 
-### Phase 3: Advanced Features
+### Phase 2: Advanced Features
 
 - [ ] Multi-token support
 - [ ] CSV export of vesting data
@@ -217,19 +218,31 @@ Vesting rate: ~41,667 tokens/month
 
 ---
 
-## 📝 Mock Data
+## 📝 Live Test Data on Sepolia
 
-The application includes 5 sample vesting schedules demonstrating various scenarios:
+The application is connected to real smart contracts deployed on Sepolia testnet:
 
-| #   | Token   | Status    | Total Amount | Cliff | Duration | Purpose                       |
-| --- | ------- | --------- | ------------ | ----- | -------- | ----------------------------- |
-| 1   | PROJ    | Active    | 1,000,000    | 6mo   | 24mo     | Standard employee vesting     |
-| 2   | TEAM    | Active    | 500,000      | 12mo  | 48mo     | Long-term team incentive      |
-| 3   | EARLY   | Completed | 2,000,000    | 3mo   | 24mo     | Early investor (fully vested) |
-| 4   | ADVISOR | Pending   | 100,000      | 6mo   | 12mo     | Future advisor grant          |
-| 5   | SEED    | Active    | 750,000      | 6mo   | 24mo     | Seed investor allocation      |
+**Smart Contracts:**
 
-This variety demonstrates different vesting scenarios, states, and edge cases.
+- **Vesting Contract:** `0x50DD7096fAB68990Ef61430FF8b6a25D0054A857`
+- **PROJ Token:** `0x334ea69ed935F5c46D777506c83262DBAD59931A`
+
+**Test Account:** `0x006Ac68Ea58Ea14cEd038bE25350A44929ADbAda`
+
+**Sample Vesting Schedules (~10 schedules):**
+
+| Token | Status  | Total Amount | Cliff | Duration | Notes                 |
+| ----- | ------- | ------------ | ----- | -------- | --------------------- |
+| PROJ  | Active  | 250,000      | None  | 1yr      | Started 30 days ago   |
+| PROJ  | Pending | 500,000      | 3mo   | 1yr      | Waiting for cliff     |
+| PROJ  | Active  | 750,000      | 1mo   | 1yr      | Cliff passed, vesting |
+| PROJ  | Pending | 1,000,000    | 6mo   | 2yr      | Long-term vesting     |
+| PROJ  | Active  | 2,000,000    | 2wk   | 1yr      | 90 days into vesting  |
+| ...   | ...     | ...          | ...   | ...      | More test scenarios   |
+
+**View on Etherscan:**
+
+- [Vesting Contract](https://sepolia.etherscan.io/address/0x50DD7096fAB68990Ef61430FF8b6a25D0054A857)
 
 ---
 
@@ -320,13 +333,13 @@ This project demonstrates:
 - Git workflow and deployment
 - ESLint configuration compliance
 
-**Note**: This is a demonstration project with mock data. For production use, it would require:
+**Note**: This is a demonstration project deployed on Sepolia testnet. For production use on mainnet, it would require:
 
-- Smart contract integration
 - Security audits
-- Real blockchain connection
+- Gas optimization
 - Enhanced error handling
-- User authentication
+- Mainnet deployment
+- Admin controls
 
 ---
 

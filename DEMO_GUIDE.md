@@ -2,7 +2,7 @@
 
 ## 📱 在线演示
 
-**Live Demo:** [https://your-app.vercel.app](https://your-app.vercel.app)
+**Live Demo:** [https://blockchain-vesting-app-ihvy.vercel.app](https://blockchain-vesting-app-ihvy.vercel.app)
 
 ---
 
@@ -33,7 +33,7 @@
 
 ### 1️⃣ 访问应用
 
-打开浏览器访问：**https://your-app.vercel.app**
+打开浏览器访问：**https://blockchain-vesting-app-ihvy.vercel.app**
 
 ### 2️⃣ 连接钱包
 
