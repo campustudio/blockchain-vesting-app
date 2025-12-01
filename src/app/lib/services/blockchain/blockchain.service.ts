@@ -220,6 +220,7 @@ export class BlockchainService {
 
     /**
      * Claim vested tokens
+     * Note: Optimized contract version - token parameter removed for security
      */
     async claimTokens(scheduleId: string, tokenAddress: string): Promise<string> {
         if (!this._vestingContract || !this._provider) {
@@ -240,13 +241,14 @@ export class BlockchainService {
                 originalScheduleId: scheduleId,
                 formattedScheduleId,
                 scheduleIdLength: formattedScheduleId.length,
-                tokenAddress,
+                tokenAddress: tokenAddress + ' (not used in optimized contract)',
             });
 
             const signer = this._provider.getSigner();
             const contractWithSigner = this._vestingContract.connect(signer);
 
-            const tx = await contractWithSigner['release'](formattedScheduleId, tokenAddress);
+            // Optimized contract: release(bytes32 vestingId) - token parameter removed
+            const tx = await contractWithSigner['release'](formattedScheduleId);
             const receipt = await tx.wait();
 
             return receipt.transactionHash as string;
