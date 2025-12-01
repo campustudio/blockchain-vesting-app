@@ -7,6 +7,18 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.3-38bdf8)](https://tailwindcss.com/)
 
+## 🎯 Quick Start for Reviewers
+
+**📖 [View Complete Demo Guide](./DEMO_GUIDE.md)** - Step-by-step instructions for testing the application
+
+**Live Demo:** [https://blockchain-vesting-app.vercel.app](https://blockchain-vesting-app.vercel.app)
+
+**Quick Test (3 steps):**
+
+1. Install [MetaMask](https://metamask.io/download/) browser extension
+2. Switch to **Sepolia testnet** in MetaMask
+3. Click "Connect Wallet" on the demo site
+
 ---
 
 ## 📋 About

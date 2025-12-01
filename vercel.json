@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "outputDirectory": "dist/blockchain-vesting-app/browser",
+  "outputDirectory": "dist/blockchain-vesting-app",
   "framework": "angular",
   "rewrites": [
     {
